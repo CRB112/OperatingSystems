@@ -36,12 +36,12 @@ int main() {
 
     printf("A");
 
-    int sM_des = shm_open("/PCProblem", O_CREAT | O_RDWR, 0666);
+    int sM_des = shm_open("/PCProblem", O_RDWR, 0666);
 
     shared_mem = mmap(NULL, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, sM_des, 0);
     
-    shared_mem -> mutex = sem_open("/mutex", 1);
-    shared_mem -> not_full = sem_open("/not_full", BUFFERSIZE);
+    shared_mem -> mutex = sem_open("/mutex", 0);
+    shared_mem -> not_full = sem_open("/not_full", 0);
     shared_mem -> not_empty = sem_open("/not_empty", 0);
 
     pthread_t consumer_t;
@@ -52,7 +52,7 @@ int main() {
     sem_close(shared_mem->mutex);
     sem_close(shared_mem->not_full);
     sem_close(shared_mem->not_empty);
-    shm_unlink("/PCProblem");
+    close(sM_des);
 
     return 0;
 } 
