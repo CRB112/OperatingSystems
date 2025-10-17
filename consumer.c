@@ -58,14 +58,14 @@ int main() {
     }
 
     
-    shared_mem -> mutex = sem_open("/mutex");
+    shared_mem -> mutex = sem_open("/mutex", 0);
     if (shared_mem->mutex == SEM_FAILED) {
         perror("sem_open for mutex failed in consumer");
         munmap(shared_mem, sizeof(shared_data_t));  // Clean up mmap
         close(sM_des);
         return 1;  // Exit on failure
     }
-    shared_mem -> not_full = sem_open("/not_full");
+    shared_mem -> not_full = sem_open("/not_full", 0);
     if (shared_mem->not_full == SEM_FAILED) {
         perror("sem_open for not_full failed in consumer");
         sem_close(shared_mem->mutex);  // Clean up previous semaphore
@@ -73,7 +73,7 @@ int main() {
         close(sM_des);
         return 1;
     }
-    shared_mem -> not_empty = sem_open("/not_empty");
+    shared_mem -> not_empty = sem_open("/not_empty", 0);
     if (shared_mem->not_empty == SEM_FAILED) {
         perror("sem_open for not_empty failed in consumer");
         sem_close(shared_mem->mutex);
@@ -85,16 +85,7 @@ int main() {
 
     pthread_t consumer_t;
 
-    if (pthread_create(&consumer_t, NULL, consumer, NULL) != 0) {
-        perror("pthread_create failed in consumer");
-        // Clean up resources
-        sem_close(shared_mem->mutex);
-        sem_close(shared_mem->not_full);
-        sem_close(shared_mem->not_empty);
-        munmap(shared_mem, sizeof(shared_data_t));
-        close(sM_des);
-        return 1;
-    }
+    pthread_create(&consumer_t, NULL, consumer, NULL);
     pthread_join(consumer_t, NULL);
 
     sem_close(shared_mem->mutex);

@@ -19,7 +19,7 @@ void* producer(void* arg) {
         sem_wait(shared_mem -> mutex);
         printf("producer wiaitng on not full");
         sem_wait(shared_mem -> not_full); 
-        printf("producer wiating on not empty")
+        printf("producer wiating on not empty");
 
         shared_mem -> buffer[shared_mem -> in] = item;
         printf("Produced %d at: %d\n", item, shared_mem -> in);
@@ -56,12 +56,9 @@ int main() {
 
 
     pthread_t producer_t;
-    pthread_t consumer_t;
 
     pthread_create(&producer_t, NULL, producer, NULL);
-    pthread_create(&consumer_t, NULL, consumer, NULL);
     pthread_join(producer_t, NULL);
-    pthread_join(consumer_t);
 
     sem_close(shared_mem->mutex);
     sem_close(shared_mem->not_full);
