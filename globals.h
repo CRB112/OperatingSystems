@@ -5,9 +5,6 @@
 
 #define BUFFERSIZE 2
 
-void* producer(void* arg);
-void* consumer(void* arg);
-
 typedef struct {
     int buffer[BUFFERSIZE];
     int in;
