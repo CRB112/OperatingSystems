@@ -16,9 +16,9 @@ void* producer(void* arg) {
     while (countProd < 10) {
         int item = (rand() % 10) + 1;
 
-        printf("a");
-
+        printf("producer wiaitng on not full");
         sem_wait(shared_mem -> not_full); 
+        printf("producer wiating on not empty")
         sem_wait(shared_mem -> mutex);
 
         shared_mem -> buffer[shared_mem -> in] = item;

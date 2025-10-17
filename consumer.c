@@ -15,7 +15,9 @@ void* consumer(void* arg) {
     int consumed = 0;
 
     while (consumed < 10) {
+        printf("consumer waiting on not empty");
         sem_wait(shared_mem -> not_empty);
+        printf("consumer waiting on not full");
         sem_wait(shared_mem -> mutex);
 
         int item = shared_mem -> buffer[shared_mem -> out];
@@ -24,7 +26,9 @@ void* consumer(void* arg) {
         shared_mem -> count--;
         consumed++;
 
+        printf("consumer hit mutex");
         sem_post(shared_mem -> mutex);
+        printf("consumer hit not full");
         sem_post(shared_mem -> not_full);
 
     }
