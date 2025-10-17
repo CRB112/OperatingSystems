@@ -22,8 +22,11 @@ void* consumer(void* arg) {
 
         int item = shared_mem -> buffer[shared_mem -> out];
         printf("Consumed %d at: %d\n", item, shared_mem -> out);
+        printf("consumed");
         shared_mem -> out = (shared_mem -> out + 1) % BUFFERSIZE;
+        printf("ploob");
         shared_mem -> count--;
+        printf("weewee");
         consumed++;
 
         printf("consumer hit mutex");
