@@ -24,8 +24,8 @@ void* consumer(void* arg) {
         shared_mem -> count--;
         consumed++;
 
-        sem_post(shared_mem -> not_full);
         sem_post(shared_mem -> mutex);
+        sem_post(shared_mem -> not_full);
 
     }
     printf("Consumer Stopping");

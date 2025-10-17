@@ -27,10 +27,10 @@ void* producer(void* arg) {
         shared_mem -> count++;
         countProd++;
 
-        printf("gleet");
-        sem_post(shared_mem -> not_empty);
         printf("gort");
         sem_post(shared_mem -> mutex);
+        printf("gleet");
+        sem_post(shared_mem -> not_empty);
         printf("sss");
     }
     printf("Producer stopping");
