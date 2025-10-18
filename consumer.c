@@ -5,96 +5,58 @@
 #include <semaphore.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <time.h>
 
 #include "globals.h"
 
-
 shared_data_t *shared_mem;
+    sem_t *mutex;
+    sem_t *not_full;
+    sem_t *not_empty;
 
 void* consumer(void* arg) {
-    int consumed = 0;
+    int countCons = 0;
 
-    while (consumed < 10) {
+    while (countCons < 10) {
+        sem_wait(not_empty);
+        sem_wait(mutex);
 
-        sem_wait(shared_mem -> not_empty);
-        
-        printf("consumer waiting on not empty");
-        sem_wait(shared_mem -> mutex);
-        printf("consumer waiting on not full");
+        int item = shared_mem->buffer[shared_mem->out];
+        printf("Consumed %d at index %d\n", item, shared_mem->out); fflush(stdout);
 
-        int item = shared_mem -> buffer[shared_mem -> out];
-        printf("Consumed %d at: %d\n", item, shared_mem -> out);
-        printf("consumed");
-        shared_mem -> out = (shared_mem -> out + 1) % BUFFERSIZE;
-        printf("ploob");
-        shared_mem -> count--;
-        printf("weewee");
-        consumed++;
+        shared_mem->out = (shared_mem->out + 1) % BUFFERSIZE;
+        shared_mem->count--;
+        countCons++;
 
-        printf("consumer hit mutex");
-        sem_post(shared_mem -> mutex);
-        printf("consumer hit not full");
-        sem_post(shared_mem -> not_full);
-
+        sem_post(mutex);
+        sem_post(not_full);
     }
-    printf("Consumer Stopping");
+
+    printf("Consumer done\n"); fflush(stdout);
     return NULL;
 }
 
 int main() {
+    sleep(3);
+    int shm_fd;
+    shm_fd = shm_open("/PCProblem", O_RDWR, 0666);
 
-    sleep(1);
-     fflush(stdout);
-    printf("A");
+    shared_mem = mmap(NULL, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
 
-    int sM_des = shm_open("/PCProblem", O_RDWR, 0666);
-    if (sM_des == -1) {
-        perror("shm_open failed in consumer");
-        return 1;  // Exit on failure
-    }
+    mutex = sem_open("/mutex", 0);
+    not_full = sem_open("/not_full", 0);
+    not_empty = sem_open("/not_empty", 0);
 
-    shared_mem = mmap(NULL, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, sM_des, 0);
-    if (shared_mem == MAP_FAILED) {
-        perror("mmap failed in consumer");
-        close(sM_des);  // Clean up file descriptor
-        return 1;  // Exit on failure
-    }
 
-    
-    shared_mem -> mutex = sem_open("/mutex", 0);
-    if (shared_mem->mutex == SEM_FAILED) {
-        perror("sem_open for mutex failed in consumer");
-        munmap(shared_mem, sizeof(shared_data_t));  // Clean up mmap
-        close(sM_des);
-        return 1;  // Exit on failure
-    }
-    shared_mem -> not_full = sem_open("/not_full", 0);
-    if (shared_mem->not_full == SEM_FAILED) {
-        perror("sem_open for not_full failed in consumer");
-        sem_close(shared_mem->mutex);  // Clean up previous semaphore
-        munmap(shared_mem, sizeof(shared_data_t));
-        close(sM_des);
-        return 1;
-    }
-    shared_mem -> not_empty = sem_open("/not_empty", 0);
-    if (shared_mem->not_empty == SEM_FAILED) {
-        perror("sem_open for not_empty failed in consumer");
-        sem_close(shared_mem->mutex);
-        sem_close(shared_mem->not_full);
-        munmap(shared_mem, sizeof(shared_data_t));
-        close(sM_des);
-        return 1;
-    }
+    pthread_t cons_thread;
+    pthread_create(&cons_thread, NULL, consumer, NULL);
+    pthread_join(cons_thread, NULL);
 
-    pthread_t consumer_t;
+    sem_close(mutex);
+    sem_close(not_full);
+    sem_close(not_empty);
+    munmap(shared_mem, sizeof(shared_data_t));
+    close(shm_fd);
 
-    pthread_create(&consumer_t, NULL, consumer, NULL);
-    pthread_join(consumer_t, NULL);
-
-    sem_close(shared_mem->mutex);
-    sem_close(shared_mem->not_full);
-    sem_close(shared_mem->not_empty);
-    close(sM_des);
-
-    return 0;
-} 
+    _exit(0);
+}

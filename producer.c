@@ -9,6 +9,10 @@
 #include "globals.h"
 
 shared_data_t *shared_mem;
+    sem_t *mutex;
+    sem_t *not_full;
+    sem_t *not_empty;
+
 
 void* producer(void* arg) {
     int countProd = 0;
@@ -16,8 +20,8 @@ void* producer(void* arg) {
     while (countProd < 10) {
         int item = (rand() % 10) + 1;
 
-        sem_wait(shared_mem->not_full);
-        sem_wait(shared_mem->mutex);
+        sem_wait(not_full);
+        sem_wait(mutex);
 
         shared_mem->buffer[shared_mem->in] = item;
         printf("Produced %d at index %d\n", item, shared_mem->in); fflush(stdout);
@@ -26,8 +30,8 @@ void* producer(void* arg) {
         shared_mem->count++;
         countProd++;
 
-        sem_post(shared_mem->mutex);
-        sem_post(shared_mem->not_empty);
+        sem_post(mutex);
+        sem_post(not_empty);
     }
 
     printf("Producer done\n"); fflush(stdout);
@@ -36,41 +40,31 @@ void* producer(void* arg) {
 
 int main() {
     int shm_fd = shm_open("/PCProblem", O_CREAT | O_RDWR, 0666);
-    if (shm_fd == -1) {
-        perror("shm_open failed");
-        exit(1);
-    }
 
     ftruncate(shm_fd, sizeof(shared_data_t));
     shared_mem = mmap(NULL, sizeof(shared_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (shared_mem == MAP_FAILED) {
-        perror("mmap failed");
-        exit(1);
-    }
 
-    // Initialize shared memory fields
+
     shared_mem->in = 0;
     shared_mem->out = 0;
     shared_mem->count = 0;
 
-    // Create and initialize semaphores
-    shared_mem->mutex = sem_open("/mutex", O_CREAT | O_EXCL, 0666, 1);
-    if (shared_mem->mutex == SEM_FAILED) shared_mem->mutex = sem_open("/mutex", 0);
+    mutex = sem_open("/mutex", O_CREAT | O_EXCL, 0666, 1);
+    if (mutex == SEM_FAILED) mutex = sem_open("/mutex", 0);
 
-    shared_mem->not_full = sem_open("/not_full", O_CREAT | O_EXCL, 0666, BUFFERSIZE);
-    if (shared_mem->not_full == SEM_FAILED) shared_mem->not_full = sem_open("/not_full", 0);
+    not_full = sem_open("/not_full", O_CREAT | O_EXCL, 0666, BUFFERSIZE - 1);
+    if (not_full == SEM_FAILED) not_full = sem_open("/not_full", 0);
 
-    shared_mem->not_empty = sem_open("/not_empty", O_CREAT | O_EXCL, 0666, 0);
-    if (shared_mem->not_empty == SEM_FAILED) shared_mem->not_empty = sem_open("/not_empty", 0);
+    not_empty = sem_open("/not_empty", O_CREAT | O_EXCL, 0666, 0);
+    if (not_empty == SEM_FAILED) not_empty = sem_open("/not_empty", 0);
 
     pthread_t prod_thread;
     pthread_create(&prod_thread, NULL, producer, NULL);
     pthread_join(prod_thread, NULL);
 
-    // Cleanup
-    sem_close(shared_mem->mutex);
-    sem_close(shared_mem->not_full);
-    sem_close(shared_mem->not_empty);
+    sem_close(mutex);
+    sem_close(not_full);
+    sem_close(not_empty);
     sem_unlink("/mutex");
     sem_unlink("/not_full");
     sem_unlink("/not_empty");
@@ -78,5 +72,6 @@ int main() {
     close(shm_fd);
     shm_unlink("/PCProblem");
 
-    return 0;
+
+    _exit(0);
 }
