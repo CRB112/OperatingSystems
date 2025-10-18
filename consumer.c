@@ -16,9 +16,10 @@ void* consumer(void* arg) {
 
     while (consumed < 10) {
 
-        sem_wait(shared_mem -> mutex);
-        printf("consumer waiting on not empty");
         sem_wait(shared_mem -> not_empty);
+        
+        printf("consumer waiting on not empty");
+        sem_wait(shared_mem -> mutex);
         printf("consumer waiting on not full");
 
         int item = shared_mem -> buffer[shared_mem -> out];
@@ -42,6 +43,8 @@ void* consumer(void* arg) {
 
 int main() {
 
+    sleep(1);
+     fflush(stdout);
     printf("A");
 
     int sM_des = shm_open("/PCProblem", O_RDWR, 0666);
