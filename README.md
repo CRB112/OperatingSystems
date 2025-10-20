@@ -25,7 +25,7 @@ or they can be run in the same terminal using:
 ```
 The producer will produce 10 items and the consumer will consumer 10 items within the 2 item buffer.
 
-# Proof of Running:
+## Proof of Running:
 After using the command above, it produces this output:
 
 <img width="691" height="492" alt="SS" src="https://github.com/user-attachments/assets/1f689d9d-1d5f-4b31-8833-f9a1e73eac91" />
@@ -72,7 +72,31 @@ The producer consumer problem uses a few key concepts that are necessary for the
    close(shm_fd);
    shm_unlink("/PCProblem");
    ```
-# Thread execution
+## Thread execution
+Each thread *consumer / producer* has its own function respectively, the return type is *void\** which, along with the *void\* arg* parameter is what makes them thread functions.
+
+**CONSUMER**
+ - While the consumer has still consumed less than 10 objects:
+   - Wait for an object to be in the buffer
+   - Wait for mutex lock access
+   - Obtains item at the *out* position dictated by the shared structure
+   - Prints item
+   - Moves the *out* position forward 1 (circular)
+   - Gives mutex lock to next thread
+   - Posts to not full (lets producer produce)
+  - Returns *NULL* to exit thread
+
+**PRODUCER**
+ - While the producer has still produced less than 10 objects:
+   - Wait for an open spot to be in the buffer
+   - Wait for mutex lock access
+   - Obtains a random number from *rand()*
+   - Sets the item at the *in* position dictated by the shared structure
+   - Prints item
+   - Moves the *in* position forward 1 (circular)
+   - Gives mutex lock to next thread
+   - Posts to not empty (lets lets consumer consume)
+  - Returns *NULL* to exit thread
 
 
 
