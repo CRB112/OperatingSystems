@@ -55,8 +55,11 @@ int main() {
     sem_close(mutex);
     sem_close(not_full);
     sem_close(not_empty);
+    sem_unlink("/mutex");
+    sem_unlink("/not_full");
+    sem_unlink("/not_empty");
     munmap(shared_mem, sizeof(shared_data_t));
     close(shm_fd);
 
-    _exit(0);
+    exit(0);
 }
