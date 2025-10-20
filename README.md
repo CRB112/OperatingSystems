@@ -53,7 +53,26 @@ The producer consumer problem uses a few key concepts that are necessary for the
       not_empty = sem_open("/not_empty", 0);
   ```
    With the only difference being that the *consumer* will **NOT** be assigning these values, and will just read them, replacing the second parameter with **0**
- -
+ - **Thread creation / destruction** - In both files, the producer and consumer will create a new thread according to the thread function that lies above them (more on that soon). The system will then wait until these finish
+   before destroying them / continuing to the last step of the program.
+   ```
+    pthread_t prod_thread;
+    pthread_create(&prod_thread, NULL, producer, NULL);
+    pthread_join(prod_thread, NULL);
+   ```
+ - **Cleanup and Exit** - Both files will dereference their semaphores, and unlink all of the data. The *producer* will also unmap the shared memory before exiting, to ensure theres no zombie data.
+   ```
+   sem_close(mutex);
+   sem_close(not_full);
+   sem_close(not_empty);
+   sem_unlink("/mutex");
+   sem_unlink("/not_full");
+   sem_unlink("/not_empty");
+   munmap(shared_mem, sizeof(shared_data_t));
+   close(shm_fd);
+   shm_unlink("/PCProblem");
+   ```
+# Thread execution
 
 
 
